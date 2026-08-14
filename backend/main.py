@@ -11,6 +11,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from db_engine import search_database, CSV_FILE
 
+
+
 # Load environment variables
 load_dotenv()
 
@@ -26,7 +28,11 @@ app.add_middleware(
 )
 
 # Root Endpoint
+# Root Endpoints (Handles all Vercel path rewrites)
 @app.get("/")
+@app.get("/api")
+@app.get("/api/index")
+@app.get("/api/index.py")
 def root():
     return {
         "status": "online",
