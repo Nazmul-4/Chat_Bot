@@ -1,8 +1,7 @@
 import os
 import shutil
 from typing import List, Optional
-from urllib.parse import urlparse
-from fastapi import FastAPI, HTTPException, UploadFile, File, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
@@ -11,6 +10,8 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from db_engine import search_database, CSV_FILE
+
+
 
 # Load environment variables
 load_dotenv()
@@ -26,25 +27,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Vercel Path Rewrite Middleware
-# Restores original client URL path (e.g. /docs, /api/chat, /)
-@app.middleware("http")
-async def fix_vercel_rewrites(request: Request, call_next):
-    forwarded_path = (
-        request.headers.get("x-forwarded-path")
-        or request.headers.get("x-vercel-forwarded-path")
-        or request.headers.get("x-invoke-path")
-    )
-    if not forwarded_path and "x-real-url" in request.headers:
-        forwarded_path = urlparse(request.headers["x-real-url"]).path
-
-    if forwarded_path:
-        request.scope["path"] = forwarded_path
-
-    return await call_next(request)
-
 # Root Endpoint
+# Root Endpoints (Handles all Vercel path rewrites)
 @app.get("/")
+@app.get("/api")
+@app.get("/api/index")
+@app.get("/api/index.py")
 def root():
     return {
         "status": "online",
