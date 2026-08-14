@@ -16,7 +16,7 @@ load_dotenv()
 
 app = FastAPI(title="Account Information AI Assistant")
 
-# Enable CORS
+# Enable CORS (Allows your frontend to make API calls)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,7 +25,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Groq Cloud LLM for Deployment
+# Root Endpoint
+@app.get("/")
+def root():
+    return {
+        "status": "online",
+        "message": "ChatBot API is running successfully!"
+    }
+
+# Initialize Groq Cloud LLM
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 llm_chat = ChatGroq(
@@ -83,11 +91,6 @@ response_prompt = ChatPromptTemplate.from_messages([
 rag_chain = response_prompt | llm_chat | StrOutputParser()
 
 
-@app.get("/")
-def root():
-    return {"status": "online", "message": "FastAPI Account Assistant Backend is running."}
-
-
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     user_query = request.message.strip()
@@ -97,7 +100,6 @@ async def chat_endpoint(request: ChatRequest):
     # 1. Refine query if conversation history exists
     effective_query = user_query
     if request.history and len(request.history) > 1:
-        # Build readable history string
         history_text = "\n".join([f"{h.sender}: {h.text}" for h in request.history[-6:]])
         try:
             refined_query = query_refining_chain.invoke({
@@ -111,7 +113,7 @@ async def chat_endpoint(request: ChatRequest):
         except Exception as e:
             print(f"Failed to refine query context: {e}")
 
-    # 2. Search database with the effective contextual query
+    # 2. Search database
     matched_records = search_database(effective_query)
     record_count = len(matched_records)
 
@@ -148,7 +150,7 @@ async def upload_csv(file: UploadFile = File(...)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .csv file.")
 
-    temp_path = f"temp_{file.filename}"
+    temp_path = f"/tmp/temp_{file.filename}"
 
     try:
         with open(temp_path, "wb") as buffer:
@@ -164,6 +166,7 @@ async def upload_csv(file: UploadFile = File(...)):
                 detail=f"Missing required columns. CSV must contain: {', '.join(required_cols)}"
             )
 
+        # Note: Disk saves in Vercel serverless are non-persistent.
         shutil.move(temp_path, CSV_FILE)
 
         return {
