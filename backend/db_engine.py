@@ -1,9 +1,10 @@
 import os
 import re
 import pandas as pd
-
 # CSV file name in your project root
-CSV_FILE = "AccountNumberInformation.csv"
+# CSV_FILE = "AccountNumberInformation.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_FILE = os.path.join(BASE_DIR, "customer_database.csv")
 
 # Common Benglish/English filler words to strip out during text searches
 FILLER_WORDS = {
