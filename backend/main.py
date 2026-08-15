@@ -11,14 +11,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from db_engine import search_database, CSV_FILE
 
-
-
 # Load environment variables
 load_dotenv()
 
+# Initialize FastAPI app (Single instance)
 app = FastAPI(title="Account Information AI Assistant")
 
-# Enable CORS (Allows your frontend to make API calls)
+# Enable CORS (Allows your Vercel frontend to call the API)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,8 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Root Endpoint
-# Root Endpoints (Handles all Vercel path rewrites)
+# Root Endpoints (Handles status checks & Vercel default routes)
 @app.get("/")
 @app.get("/api")
 @app.get("/api/index")
@@ -98,6 +96,7 @@ rag_chain = response_prompt | llm_chat | StrOutputParser()
 
 
 @app.post("/api/chat")
+@app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
     user_query = request.message.strip()
     if not user_query:
@@ -152,6 +151,7 @@ async def chat_endpoint(request: ChatRequest):
 
 
 @app.post("/api/upload-csv")
+@app.post("/upload-csv")
 async def upload_csv(file: UploadFile = File(...)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .csv file.")
